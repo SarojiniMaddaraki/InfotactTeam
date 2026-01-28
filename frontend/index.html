@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AdVantage Gen - Week 2</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>AI Ad Creative Generator</h1>
+
+  <div class="container">
+    <label>Ad Prompt</label>
+    <input
+      type="text"
+      id="prompt"
+      placeholder="Eco-friendly coffee cup advertisement"
+    />
+
+    <label>Brand Tone</label>
+    <select id="tone">
+      <option value="Professional">Professional</option>
+      <option value="Witty">Witty</option>
+      <option value="Urgent">Urgent</option>
+      <option value="Inspirational">Inspirational</option>
+    </select>
+
+    <button onclick="generateAd()">Generate Ad</button>
+
+    <div id="result" class="result hidden">
+      <h3>Generated Ad</h3>
+      <img id="adImage" />
+      <p><strong>Caption:</strong> <span id="caption"></span></p>
+      <p><strong>Hashtags:</strong> <span id="hashtags"></span></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
