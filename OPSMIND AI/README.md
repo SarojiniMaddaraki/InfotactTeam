@@ -19,7 +19,6 @@ In Week 1, we built the core Knowledge Ingestion and Vector Search pipeline for 
 
 🚀 Semantic Search implemented using $vectorSearch
 
-🔄 Workflow
 PDF Upload
    ↓
 Text Extraction
@@ -33,3 +32,4 @@ Stored in MongoDB Atlas
 Indexed via Atlas Vector Search
    ↓
 Semantic Retrieval via API
+
