@@ -1,35 +1,36 @@
-OPSMIND AI
-📅 Week 1 – Knowledge Ingestion Layer
+Project : Enterprise SOP Neural Brain 
+ 
+Project Title: Context-Aware Corporate Knowledge Assistant 
+Product Brand Name: "OpsMind AI" 
 
-In Week 1, we built the core Knowledge Ingestion and Vector Search pipeline for the RAG system.
+Week 1 – Core RAG Foundation
 
-✅ Features Implemented
+**Features Implemented
 
-📂 PDF Upload Service using Multer
+1. PDF Upload & Parsing
 
-📄 PDF Text Extraction using pdf-parse
+2. Text Chunking with Overlap
 
-✂️ Text Chunking (1000-character chunks with overlap)
+3. Embedding Generation using nomic-embed-text (Ollama)
 
-🧠 Embedding Generation using nomic-embed-text
+4. Vector Storage in MongoDB Atlas
 
-🗄️ Vector Storage in MongoDB Atlas
+5. MongoDB Atlas $vectorSearch
 
-🔎 Vector Search Index created in MongoDB Atlas
+6. Strict Context-Based Answer Generation
 
-🚀 Semantic Search implemented using $vectorSearch
+Week 2 – Optimized Search & Production Improvements
 
-PDF Upload
-   ↓
-Text Extraction
-   ↓
-Chunking (1000 chars + overlap)
-   ↓
-Embedding Generation (768-dimension vectors)
-   ↓
-Stored in MongoDB Atlas
-   ↓
-Indexed via Atlas Vector Search
-   ↓
-Semantic Retrieval via API
+**Enhancements
 
+1. Batched Embedding Generation
+
+2. Similarity Threshold Filtering
+
+3. Improved RAG Prompt Engineering (Anti-Hallucination)
+
+4. Context Limiting for Faster Inference
+
+5. Clean Modular Architecture (Controllers, Routes, Config)
+
+6. Performance Logging & Optimization
