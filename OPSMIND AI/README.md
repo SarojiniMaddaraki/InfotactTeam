@@ -1,7 +1,8 @@
-Project : Enterprise SOP Neural Brain 
+#Project : Enterprise SOP Neural Brain 
  
-Project Title: Context-Aware Corporate Knowledge Assistant 
-Product Brand Name: "OpsMind AI" 
+#Project Title: Context-Aware Corporate Knowledge Assistant
+
+#Product Brand Name: "OpsMind AI" 
 
 Week 1 – Core RAG Foundation
 
