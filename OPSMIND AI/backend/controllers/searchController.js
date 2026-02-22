@@ -9,7 +9,7 @@ const search = async (req, res) => {
       return res.status(400).json({ error: "Query is required" })
     }
 
-    // 1️⃣ Generate embedding for user query
+    // 1️⃣ Generate embedding for user querya
     const embeddingResponse = await axios.post(
       "http://127.0.0.1:11434/api/embeddings",
       {
