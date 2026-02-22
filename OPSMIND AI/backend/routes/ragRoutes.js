@@ -1,9 +1,19 @@
-const express = require('express')
+const express = require("express")
 const router = express.Router()
-const { addDocument, askQuestion, searchDocuments } = require('../controllers/ragController')
 
-router.post('/add', addDocument)
-router.post('/ask', askQuestion)
-router.post('/search', searchDocuments)   // 👈 ADD THIS
+const {
+  addDocument,
+  askQuestion,
+  searchDocuments
+} = require("../controllers/ragController")
+
+// Add document manually
+router.post("/add", addDocument)
+
+// Ask question (Full RAG with Gemini)
+router.post("/ask", askQuestion)
+
+// Only vector search (No LLM)
+router.post("/search", searchDocuments)
 
 module.exports = router
