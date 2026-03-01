@@ -36,3 +36,19 @@ Week 2 – Optimized Search & Production Improvements
 5. Clean Modular Architecture (Controllers, Routes, Config)
 
 6. Performance Logging & Optimization
+
+Week 3 – The Chat Interface & Synthesis
+
+**Enhancements
+
+Integration of Gemini 1.5 Flash for Low-Latency Generation
+
+Response Streaming to React Frontend using Server-Sent Events (SSE)
+
+Hallucination Testing and Strict Context Validation
+
+Implementation of Reference Cards for Citation Display
+
+Frontend–Backend Chat Integration
+
+Structured Error Handling and Streaming Optimization
