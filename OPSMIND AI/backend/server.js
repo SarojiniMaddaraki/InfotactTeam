@@ -1,38 +1,51 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const connectDB = require("./config/db");
-
-const app = express();
-
-// Connect Database
-connectDB();
-
-const generateEmbedding = require("./services/embeddingService");
-
-(async () => {
-  try {
-    const embedding = await generateEmbedding("Test embedding for OpsMind AI");
-    console.log("✅ Embedding generated");
-    console.log("Vector length:", embedding.length);
-  } catch (err) {
-    console.error("❌ Embedding failed");
-  }
-})();
+const dotenv = require("dotenv")
+dotenv.config()
+const express = require("express")
+const cors = require("cors")
+const connectDB = require("./config/db")
+const conversationRoutes = require("./routes/conversationRoutes")
 
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+connectDB()
 
-// Test Route
+const app = express()
+
+// ================= MIDDLEWARES =================
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}))
+
+app.use(express.json())
+
+// Serve uploaded files
+app.use("/uploads", express.static("uploads"))
+
+// ================= ROUTES =================
+app.use("/api/auth", require("./routes/authRoutes"))
+app.use("/api/ingest", require("./routes/ingestionRoutes"))
+app.use("/api/rag", require("./routes/ragRoutes"))
+app.use("/api/conversations", conversationRoutes)  // ✅ Correct
+
+// ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
-  res.send("🚀 OpsMind AI Backend Running...");
-});
+  res.json({ message: "OpsMind AI Backend Running ✅" })
+})
 
-// Start Server
-const PORT = process.env.PORT || 5000;
+// ================= GLOBAL ERROR HANDLER =================
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err.message)
+
+  if (err.message.includes("Only PDF and TXT")) {
+    return res.status(400).json({ error: err.message })
+  }
+
+  res.status(500).json({ error: "Internal Server Error" })
+})
+
+// ================= START SERVER =================
+const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
-});
+  console.log(`🚀 Server running on port ${PORT}`)
+})
