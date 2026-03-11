@@ -18,6 +18,12 @@ export default function App() {
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [uploading, setUploading] = useState(false)
   const [activeTab, setActiveTab] = useState("chat")
+  
+  // ✅ NEW: Chat History State
+  const [conversations, setConversations] = useState([])
+  const [currentConversationId, setCurrentConversationId] = useState(null)
+  const [showSidebar, setShowSidebar] = useState(true)
+  
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -28,7 +34,10 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (currentUser) fetchFiles()
+    if (currentUser) {
+      fetchFiles()
+      fetchConversations() // ✅ NEW: Load conversations on login
+    }
   }, [currentUser])
 
   useEffect(() => {
@@ -43,9 +52,115 @@ export default function App() {
     setCurrentUser(null)
     setMessages([])
     setUploadedFiles([])
+    setConversations([])
+    setCurrentConversationId(null)
   }
 
   const getToken = () => localStorage.getItem("token")
+
+  // ✅ NEW: Fetch all conversations
+  const fetchConversations = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setConversations(data.conversations || [])
+      }
+    } catch (e) {
+      console.error("Failed to fetch conversations", e)
+    }
+  }
+
+  // ✅ NEW: Create new conversation
+  const createNewConversation = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ title: "New Chat" })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCurrentConversationId(data.conversation.id)
+        setMessages([])
+        await fetchConversations()
+        return data.conversation.id // ✅ FIXED: Return the conversation ID
+      }
+      return null
+    } catch (e) {
+      console.error("Failed to create conversation", e)
+      return null
+    }
+  }
+
+  // ✅ NEW: Load conversation
+  const loadConversation = async (conversationId) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${conversationId}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCurrentConversationId(conversationId)
+        setMessages(data.conversation.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          sources: msg.sources || [],
+          isStreaming: false,
+          isGuardrail: msg.isGuardrail || false
+        })))
+      }
+    } catch (e) {
+      console.error("Failed to load conversation", e)
+    }
+  }
+
+  // ✅ NEW: Delete conversation
+  const deleteConversation = async (conversationId, e) => {
+    e.stopPropagation()
+    if (!confirm("Delete this conversation?")) return
+    
+    try {
+      await fetch(`${API_BASE}/api/conversations/${conversationId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      
+      if (currentConversationId === conversationId) {
+        setCurrentConversationId(null)
+        setMessages([])
+      }
+      
+      fetchConversations()
+    } catch (e) {
+      console.error("Failed to delete conversation", e)
+    }
+  }
+
+  // ✅ NEW: Save message to conversation
+  const saveMessageToConversation = async (role, content, sources = [], isGuardrail = false, convId = null) => {
+    const conversationId = convId || currentConversationId
+    if (!conversationId) return
+
+    try {
+      await fetch(`${API_BASE}/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ role, content, sources, isGuardrail })
+      })
+      fetchConversations() // Refresh list
+    } catch (e) {
+      console.error("Failed to save message", e)
+    }
+  }
 
   const fetchFiles = async () => {
     try {
@@ -86,10 +201,27 @@ export default function App() {
     setQuestion("")
     setIsStreaming(true)
 
+    // ✅ FIXED: Wait for conversation to be created and get the ID
+    let conversationId = currentConversationId
+    if (!conversationId) {
+      conversationId = await createNewConversation()
+      if (!conversationId) {
+        alert("Failed to create conversation. Check if backend is running.")
+        setIsStreaming(false)
+        return
+      }
+    }
+
     setMessages(prev => [...prev, { role: "user", content: q }])
     setMessages(prev => [...prev, { role: "assistant", content: "", sources: [], isStreaming: true, isGuardrail: false }])
 
+    // ✅ FIXED: Save user message with guaranteed conversation ID
+    await saveMessageToConversation("user", q, [], false, conversationId)
+
     try {
+      console.log("🚀 Sending request to:", `${API_BASE}/api/rag/ask`)
+      console.log("🔑 Token:", getToken() ? "Present" : "Missing")
+      
       const response = await fetch(`${API_BASE}/api/rag/ask`, {
         method: "POST",
         headers: {
@@ -99,73 +231,59 @@ export default function App() {
         body: JSON.stringify({ question: q }),
       })
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ""
+      console.log("📡 Response status:", response.status)
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split("\n")
-        buffer = lines.pop()
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue
-          try {
-            const data = JSON.parse(line.slice(6))
-            if (data.type === "token") {
-              setMessages(prev => {
-                const updated = [...prev]
-                const last = { ...updated[updated.length - 1] }
-                last.content = last.content + data.token
-                updated[updated.length - 1] = last
-                return updated
-              })
-            }
-            if (data.type === "guardrail") {
-              setMessages(prev => {
-                const updated = [...prev]
-                const last = { ...updated[updated.length - 1] }
-                last.content = data.answer
-                last.isGuardrail = true
-                last.isStreaming = false
-                last.sources = []
-                updated[updated.length - 1] = last
-                return updated
-              })
-              setIsStreaming(false)
-            }
-            if (data.type === "done") {
-              setMessages(prev => {
-                const updated = [...prev]
-                const last = { ...updated[updated.length - 1] }
-                last.isStreaming = false
-                last.sources = data.sources || []
-                updated[updated.length - 1] = last
-                return updated
-              })
-              setIsStreaming(false)
-            }
-            if (data.type === "error") {
-              setMessages(prev => {
-                const updated = [...prev]
-                const last = { ...updated[updated.length - 1] }
-                last.content = "❌ " + (data.message || "An error occurred.")
-                last.isStreaming = false
-                updated[updated.length - 1] = last
-                return updated
-              })
-              setIsStreaming(false)
-            }
-          } catch (e) {}
-        }
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("❌ Backend error:", response.status, errorText)
+        
+        setMessages(prev => {
+          const updated = [...prev]
+          const last = { ...updated[updated.length - 1] }
+          
+          if (response.status === 401) {
+            last.content = "❌ Authentication failed. Please logout and login again."
+          } else if (response.status === 500) {
+            last.content = "❌ Backend server error. Check backend console for details."
+          } else {
+            last.content = `❌ Request failed (${response.status}): ${errorText}`
+          }
+          
+          last.isStreaming = false
+          updated[updated.length - 1] = last
+          return updated
+        })
+        setIsStreaming(false)
+        return
       }
-    } catch (err) {
+
+      console.log("✅ Getting JSON response...")
+      
+      const data = await response.json()
+      console.log("📦 Response data:", data)
+
       setMessages(prev => {
         const updated = [...prev]
         const last = { ...updated[updated.length - 1] }
-        last.content = "❌ Connection error. Is the backend running?"
+        last.content = data.answer || "No answer received."
+        last.isGuardrail = data.guardrail || false
+        last.isStreaming = false
+        last.sources = data.sources || []
+        updated[updated.length - 1] = last
+        return updated
+      })
+
+      // ✅ FIXED: Save assistant message with guaranteed conversation ID
+      await saveMessageToConversation("assistant", data.answer, data.sources, data.guardrail, conversationId)
+      
+      setIsStreaming(false)
+
+    } catch (err) {
+      console.error("❌ Fetch error:", err)
+      setMessages(prev => {
+        const updated = [...prev]
+        const last = { ...updated[updated.length - 1] }
+        last.content = `❌ Connection error: ${err.message}. Is the backend running on port 5000?`
         last.isStreaming = false
         updated[updated.length - 1] = last
         return updated
@@ -217,75 +335,235 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── CHAT TAB ── */}
+      {/* ── CHAT TAB WITH SIDEBAR ── */}
       {activeTab === "chat" && (
-        <div style={cs.wrapper}>
-          <div style={cs.messagesArea}>
-
-            {messages.length === 0 && (
-              <div style={cs.emptyState}>
-                <div style={cs.emptyIcon}>🧠</div>
-                <div style={cs.emptyTitle}>
-                  Hello {currentUser.name}! Ask me anything about your SOP documents.
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+          
+          {/* ✅ NEW: CHAT HISTORY SIDEBAR */}
+          {showSidebar && (
+            <div style={{
+              width: 280,
+              background: "#1e293b",
+              borderRight: "1px solid #334155",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden"
+            }}>
+              {/* Sidebar Header */}
+              <div style={{
+                padding: 16,
+                borderBottom: "1px solid #334155",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}>
+                  💬 Chat History
                 </div>
-                {isAdmin && <div style={cs.emptySubtitle}>Upload PDFs in the Files tab to get started</div>}
+                <button 
+                  onClick={createNewConversation}
+                  style={{
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontWeight: 600
+                  }}
+                >
+                  + New
+                </button>
               </div>
-            )}
 
-            {messages.map((msg, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-                <div style={{ maxWidth: "78%" }}>
+              {/* Conversations List */}
+              <div style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: 8
+              }}>
+                {conversations.length === 0 ? (
+                  <div style={{
+                    padding: 24,
+                    textAlign: "center",
+                    color: "#64748b",
+                    fontSize: 13
+                  }}>
+                    No conversations yet.<br/>Start chatting!
+                  </div>
+                ) : (
+                  conversations.map(conv => (
+                    <div
+                      key={conv.id}
+                      onClick={() => loadConversation(conv.id)}
+                      style={{
+                        padding: 12,
+                        margin: "4px 0",
+                        background: currentConversationId === conv.id ? "#334155" : "transparent",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        border: currentConversationId === conv.id ? "1px solid #3b82f6" : "1px solid transparent",
+                        transition: "all 0.2s",
+                        position: "relative"
+                      }}
+                      onMouseEnter={e => {
+                        if (currentConversationId !== conv.id) {
+                          e.currentTarget.style.background = "#2d3748"
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (currentConversationId !== conv.id) {
+                          e.currentTarget.style.background = "transparent"
+                        }
+                      }}
+                    >
+                      <div style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "#e2e8f0",
+                        marginBottom: 4,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {conv.title}
+                      </div>
+                      <div style={{
+                        fontSize: 11,
+                        color: "#64748b",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {conv.messageCount} messages
+                      </div>
+                      <button
+                        onClick={(e) => deleteConversation(conv.id, e)}
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          background: "transparent",
+                          border: "none",
+                          color: "#ef4444",
+                          cursor: "pointer",
+                          fontSize: 16,
+                          padding: 4,
+                          opacity: 0.6
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                        onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
 
-                  {/* Bubble */}
-                  <div style={bubbleStyle(msg.role, msg.isGuardrail)}>
-                    {msg.role === "assistant" && msg.isGuardrail && (
-                      <div style={{ color: "#fbbf24", fontWeight: "bold", marginBottom: 8, fontSize: 13 }}>
-                        ⚠️ Outside Knowledge Base
+              {/* Sidebar Footer */}
+              <div style={{
+                padding: 12,
+                borderTop: "1px solid #334155",
+                fontSize: 11,
+                color: "#64748b",
+                textAlign: "center"
+              }}>
+                {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+
+          {/* Main Chat Area */}
+          <div style={{ ...cs.wrapper, flex: 1 }}>
+            {/* Toggle Sidebar Button */}
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                background: "#334155",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 12px",
+                color: "#94a3b8",
+                cursor: "pointer",
+                fontSize: 18,
+                zIndex: 10
+              }}
+            >
+              {showSidebar ? "◀" : "▶"}
+            </button>
+
+            <div style={cs.messagesArea}>
+
+              {messages.length === 0 && (
+                <div style={cs.emptyState}>
+                  <div style={cs.emptyIcon}>🧠</div>
+                  <div style={cs.emptyTitle}>
+                    Hello {currentUser.name}! Ask me anything about your SOP documents.
+                  </div>
+                  {isAdmin && <div style={cs.emptySubtitle}>Upload PDFs in the Files tab to get started</div>}
+                </div>
+              )}
+
+              {messages.map((msg, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div style={{ maxWidth: "78%" }}>
+
+                    {/* Bubble */}
+                    <div style={bubbleStyle(msg.role, msg.isGuardrail)}>
+                      {msg.role === "assistant" && msg.isGuardrail && (
+                        <div style={{ color: "#fbbf24", fontWeight: "bold", marginBottom: 8, fontSize: 13 }}>
+                          ⚠️ Outside Knowledge Base
+                        </div>
+                      )}
+                      {msg.content}
+                      {msg.isStreaming && <span style={{ color: "#3b82f6", fontWeight: "bold" }}>▌</span>}
+                    </div>
+
+                    {/* Reference Cards */}
+                    {msg.role === "assistant" && !msg.isStreaming && msg.sources?.length > 0 && (
+                      <div style={rs.wrapper}>
+                        <div style={rs.label}>📎 REFERENCES</div>
+                        <div style={rs.cardsRow}>
+                          {msg.sources.map((src, si) => (
+                            <div key={si} style={rs.card}>
+                              <div style={rs.cardFile}>📄 {src.fileName}</div>
+                              {src.pageNumber && <div style={rs.cardPage}>Page {src.pageNumber}</div>}
+                              <div style={rs.cardScore}>Match: {src.matchScore || src.score}%</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {msg.content}
-                    {msg.isStreaming && <span style={{ color: "#3b82f6", fontWeight: "bold" }}>▌</span>}
+
                   </div>
-
-                  {/* Reference Cards */}
-                  {msg.role === "assistant" && !msg.isStreaming && msg.sources?.length > 0 && (
-                    <div style={rs.wrapper}>
-                      <div style={rs.label}>📎 REFERENCES</div>
-                      <div style={rs.cardsRow}>
-                        {msg.sources.map((src, si) => (
-                          <div key={si} style={rs.card}>
-                            <div style={rs.cardFile}>📄 {src.fileName}</div>
-                            {src.pageNumber && <div style={rs.cardPage}>Page {src.pageNumber}</div>}
-                            <div style={rs.cardScore}>Match: {src.score}%</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                 </div>
-              </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
 
-          {/* Input bar */}
-          <div style={cs.inputBar}>
-            <input
-              value={question}
-              onChange={e => setQuestion(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleAsk()}
-              placeholder="Ask a question about your SOP documents..."
-              disabled={isStreaming}
-              style={cs.input}
-            />
-            <button
-              onClick={handleAsk}
-              disabled={isStreaming || !question.trim()}
-              style={askBtnStyle(isStreaming || !question.trim())}
-            >
-              {isStreaming ? "⏳" : "Ask →"}
-            </button>
+            {/* Input bar */}
+            <div style={cs.inputBar}>
+              <input
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleAsk()}
+                placeholder="Ask a question about your SOP documents..."
+                disabled={isStreaming}
+                style={cs.input}
+              />
+              <button
+                onClick={handleAsk}
+                disabled={isStreaming || !question.trim()}
+                style={askBtnStyle(isStreaming || !question.trim())}
+              >
+                {isStreaming ? "⏳" : "Ask →"}
+              </button>
+            </div>
           </div>
         </div>
       )}
