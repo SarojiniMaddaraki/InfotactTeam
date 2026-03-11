@@ -7,7 +7,7 @@ import {
   refStyles as rs, filesStyles as fs, uploadBtnStyle
 } from "./styles/App.styles"
 
-const API_BASE = "http://localhost:5000"
+const API_BASE = "https://infotactteam.onrender.com"
 
 export default function App() {
   const [authPage, setAuthPage] = useState("login")
