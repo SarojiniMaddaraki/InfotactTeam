@@ -11,6 +11,8 @@ const API_BASE = import.meta.env.PROD
   ? "https://infotactteam.onrender.com"
   : "http://localhost:5000"
 
+
+
 export default function App() {
   const [authPage, setAuthPage] = useState("login")
   const [currentUser, setCurrentUser] = useState(null)
