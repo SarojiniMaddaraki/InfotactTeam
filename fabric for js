@@ -1,0 +1,106 @@
+import * as fabric from 'fabric';
+import { useEffect, useRef } from 'react';
+
+const AdEditor = ({ imageUrl, caption, hashtags, onExport }) => {
+  const canvasRef = useRef(null);
+  const fabricCanvasRef = useRef(null);
+
+  useEffect(() => {
+    if (canvasRef.current && imageUrl) {
+      // Initialize Fabric.js canvas
+      const canvas = new fabric.Canvas(canvasRef.current, {
+        width: 800,
+        height: 800,
+      });
+
+      fabricCanvasRef.current = canvas;
+
+      // Load the generated image
+      fabric.Image.fromURL(imageUrl, (img) => {
+        img.scaleToWidth(800);
+        img.scaleToHeight(800);
+        canvas.add(img);
+        canvas.sendToBack(img);
+
+        // Add caption text
+        const captionText = new fabric.Text(caption, {
+          left: 50,
+          top: 50,
+          fontSize: 36,
+          fill: '#333',
+          fontFamily: 'Arial',
+          editable: true,
+        });
+        canvas.add(captionText);
+
+        // Add hashtags text
+        const hashtagsText = new fabric.Text(hashtags, {
+          left: 50,
+          top: 100,
+          fontSize: 24,
+          fill: '#666',
+          fontFamily: 'Arial',
+          editable: true,
+        });
+        canvas.add(hashtagsText);
+
+        // Add CTA button
+        const ctaRect = new fabric.Rect({
+          left: 250,
+          top: 600,
+          width: 300,
+          height: 80,
+          fill: '#ff6600',
+          rx: 15,
+          ry: 15,
+        });
+
+        const ctaText = new fabric.Text('SHOP NOW', {
+          left: 400,
+          top: 625,
+          fontSize: 32,
+          fill: 'white',
+          fontFamily: 'Arial',
+          originX: 'center',
+          originY: 'center',
+        });
+
+        const ctaGroup = new fabric.Group([ctaRect, ctaText], {
+          left: 250,
+          top: 600,
+        });
+
+        canvas.add(ctaGroup);
+
+        canvas.renderAll();
+      });
+    }
+
+    return () => {
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+      }
+    };
+  }, [imageUrl, caption, hashtags]);
+
+  const handleExport = () => {
+    if (fabricCanvasRef.current) {
+      const dataURL = fabricCanvasRef.current.toDataURL({
+        format: 'png',
+        quality: 1,
+      });
+      onExport(dataURL);
+    }
+  };
+
+  return (
+    <div>
+      <canvas ref={canvasRef} style={{ border: '1px solid #ccc' }} />
+      <button onClick={handleExport} style={{ marginTop: '10px' }}>
+        Export Final Image
+      </button>
+    </div>
+  );
+};
+
+export default AdEditor;
