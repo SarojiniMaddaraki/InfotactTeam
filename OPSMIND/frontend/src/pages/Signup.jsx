@@ -1,10 +1,12 @@
 import { useState } from "react"
 import { loginStyles as s, badgeStyle } from "../styles/Login.styles"
 
-const API_BASE = "http://localhost:5000"
+const API_BASE = import.meta.env.PROD 
+  ? "https://infotactteam.onrender.com"
+  : "http://localhost:5000"
 
-export default function Login({ onSwitch, onAuth }) {
-  const [form, setForm] = useState({ email: "", password: "" })
+export default function Signup({ onSwitch, onAuth }) {
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -13,18 +15,18 @@ export default function Login({ onSwitch, onAuth }) {
 
   const handleSubmit = async () => {
     setError("")
-    if (!form.email || !form.password)
-      return setError("Email and password are required")
+    if (!form.name || !form.email || !form.password)
+      return setError("All fields are required")
 
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       })
       const data = await res.json()
-      if (!res.ok) return setError(data.error || "Login failed")
+      if (!res.ok) return setError(data.error || "Signup failed")
 
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
@@ -42,9 +44,20 @@ export default function Login({ onSwitch, onAuth }) {
 
         <div style={s.logo}>🧠</div>
         <h1 style={s.title}>OpsMind AI</h1>
-        <p style={s.subtitle}>Sign in to your account</p>
+        <p style={s.subtitle}>Create your account</p>
 
         {error && <div style={s.error}>⚠️ {error}</div>}
+
+        <div style={s.field}>
+          <label style={s.label}>Name</label>
+          <input
+            name="name" type="text"
+            placeholder="Enter your name"
+            value={form.name} onChange={handleChange}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+            style={s.input}
+          />
+        </div>
 
         <div style={s.field}>
           <label style={s.label}>Email</label>
@@ -74,9 +87,22 @@ export default function Login({ onSwitch, onAuth }) {
           </div>
         </div>
 
+        <div style={s.field}>
+          <label style={s.label}>Role</label>
+          <select
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            style={{...s.input, cursor: "pointer"}}
+          >
+            <option value="user">👤 User - Can chat and ask questions</option>
+            <option value="admin">👑 Admin - Can also upload documents</option>
+          </select>
+        </div>
+
         <button onClick={handleSubmit} disabled={loading}
           style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
-          {loading ? "Signing in..." : "Sign In →"}
+          {loading ? "Creating account..." : "Sign Up →"}
         </button>
 
         <div style={s.infoBox}>
@@ -91,8 +117,8 @@ export default function Login({ onSwitch, onAuth }) {
         </div>
 
         <p style={s.switchText}>
-          Don't have an account?{" "}
-          <span onClick={onSwitch} style={s.link}>Sign up</span>
+          Already have an account?{" "}
+          <span onClick={onSwitch} style={s.link}>Sign in</span>
         </p>
       </div>
     </div>
