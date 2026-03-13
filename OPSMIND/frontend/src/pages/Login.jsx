@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { loginStyles as s, badgeStyle } from "../styles/Login.styles"
 
-const API_BASE = "http://localhost:5000"
+const API_BASE = import.meta.env.PROD 
+  ? "https://infotactteam.onrender.com"
+  : "http://localhost:5000"
 
 export default function Login({ onSwitch, onAuth }) {
   const [form, setForm] = useState({ email: "", password: "" })
