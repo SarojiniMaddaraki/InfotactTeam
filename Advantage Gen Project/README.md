@@ -1,244 +1,142 @@
-AdVantage Gen – Automated Social Media Campaign Studio
-📌 Project Overview
+# AdVantage Gen – Automated Social Media Campaign Studio
 
-AdVantage Gen is an AI-powered social media campaign generation platform developed during the AI Innovation Lab at Infotact Solutions.
+## Project Overview
 
-The system allows users to enter a single creative prompt and automatically generate a complete marketing campaign asset including:
+AdVantage Gen is an AI-powered social media campaign generator developed during the AI Innovation Lab at Infotact Solutions.
 
-AI-generated promotional image
+The system allows users to enter a single prompt and automatically generate a complete marketing campaign including an AI-generated image, caption, hashtags, and branding elements.
 
-Optimized social media caption
+The platform combines image generation and text generation to create ready-to-publish social media creatives for platforms like Instagram and LinkedIn.
 
-Platform-specific hashtags
+---
 
-Branding elements like logo and call-to-action buttons
+## System Architecture
 
-The platform uses multi-modal AI generation by combining image generation models and text generation models to rapidly produce ready-to-publish social media creatives.
+The system contains four main components
 
-This tool helps marketers reduce campaign creation time, enable faster experimentation, and perform A/B testing efficiently.
+1. Prompt Processing and Image Generation
+2. AI Copywriting Engine
+3. Creative Studio Editor
+4. Campaign Storage and Remix System
 
-🧠 System Architecture
+---
 
-The system consists of four major layers:
+## Development Timeline
 
-Prompt Processing & Image Generation
+### Week 1 – Image Generation Engine
 
-AI Copywriting Engine
+Connected the Express backend with Hugging Face Inference API.
 
-Creative Studio Editor
+Tasks completed
 
-Campaign Storage & Remix System
+- Prompt enhancement using AI
+- Generated images using Flux or SDXL models
+- Converted simple prompts into detailed prompts
 
-📅 Development Timeline
-Week 1 – Image Generation Engine
+Result
 
-The first stage focused on building the AI image generation pipeline and connecting the backend with the Hugging Face inference API.
+High quality marketing images generated successfully from multiple prompts.
 
-Key Features
+---
 
-Connected Express backend with Hugging Face Inference API
+### Week 2 – Copywriting and Branding
 
-Implemented prompt enhancement pipeline
+Implemented AI caption generation using Gemini API.
 
-Used an LLM to convert short prompts into highly descriptive prompts
+Tasks completed
 
-Generated marketing-quality visuals using Flux / SDXL models
+- Caption generation
+- Social media hashtag generation
+- Brand voice tone selection
+- Logo overlay using Sharp or Canvas
+- CTA button placement
 
-Verification
+Result
 
-Generated multiple high-quality images from different prompts
+Logo and CTA were correctly placed across square, vertical, and horizontal images.
 
-Ensured visual consistency across different prompt variations
+---
 
-Verified stable API responses and latency performance
+### Week 3 – Studio UI and Editor
 
-Week 2 – Copywriting & Branding Engine
+Built a React based editing interface.
 
-The second stage implemented the AI-powered marketing copy generator and branding automation system.
+Tasks completed
 
-Key Features
+- Drag and drop text elements
+- Resize captions
+- Move CTA buttons
+- Live preview before export
 
-Integrated Gemini API for caption generation
+Workflow
 
-Generated platform-specific hashtags
+Prompt → Generate → Edit → Download
 
-Implemented brand voice tuning
+---
 
-Available tones:
+### Week 4 – Scaling and Campaign History
 
-Witty
+Implemented storage and campaign management.
 
-Professional
+Tasks completed
 
-Urgent
+- Stored campaign data in MongoDB
+- Stored images in Cloudinary
+- Built Remix feature for campaign variations
 
-Inspirational
+Result
 
-Image Branding Pipeline
+Users can regenerate similar campaigns with modified prompts.
 
-Implemented Sharp / Canvas processing pipeline to automatically overlay:
+---
 
-Brand logo
+## Tech Stack
 
-CTA badge (e.g., Shop Now)
+Frontend  
+React  
+HTML  
+CSS  
 
-Marketing design elements
+Backend  
+Node.js  
+Express.js  
 
-Verification
+AI Services  
+Hugging Face Inference API  
+Google Gemini API  
 
-Tested logo overlay across multiple image formats:
+Image Processing  
+Sharp  
+Canvas  
 
-Square
+Database and Storage  
+MongoDB Atlas  
+Cloudinary  
 
-Vertical
+---
 
-Horizontal
+## Features
 
-Verified consistent placement (bottom-right corner)
+- AI image generation
+- AI caption and hashtag generation
+- Automatic branding with logo overlay
+- Custom call to action buttons
+- Interactive campaign editor
+- Campaign history storage
+- Remix campaign generation
 
-Week 3 – Studio UI & Campaign Editor
+---
 
-The third stage focused on building the interactive creative editing studio.
+## Future Improvements
 
-Key Features
+- Video ad generation
+- Multi platform campaign export
+- AI campaign performance insights
+- Advanced templates for marketing creatives
 
-Developed React-based campaign editor
+---
 
-Implemented drag-and-drop UI
+## Developed At
 
-Added functionality to:
-
-Move text elements
-
-Resize captions
-
-Reposition CTA buttons
-
-Enabled real-time visual preview
-
-Full UX Flow
-User Prompt → Generate Campaign → Edit Design → Download Asset
-Testing
-
-Verified responsive UI behaviour
-
-Tested editing interactions for text, logo, and CTA positioning
-
-Confirmed smooth export of final campaign assets
-
-Week 4 – Campaign Scaling & History System
-
-The final stage focused on data persistence and campaign management.
-
-Key Features
-
-Implemented MongoDB database storage
-
-Stored campaign metadata including:
-
-User prompt
-
-Generated caption
-
-Hashtags
-
-Image URLs
-
-Integrated Cloudinary for media storage
-
-Developed Remix Feature
-
-Remix Feature
-
-Allows users to:
-
-Re-generate campaign variants
-
-Modify prompt slightly
-
-Produce multiple creative outputs for A/B testing
-
-Final Testing
-
-Performed End-to-End campaign generation tests
-
-Verified campaign history retrieval
-
-Tested remix workflow for generating creative variations
-
-🛠️ Tech Stack
-Frontend
-
-React.js
-
-Fabric.js / CSS overlays
-
-HTML
-
-CSS
-
-Backend
-
-Node.js
-
-Express.js
-
-AI & Generative Models
-
-Hugging Face Inference API (Flux / SDXL)
-
-Google Gemini API
-
-Image Processing
-
-Sharp
-
-Canvas
-
-Database & Storage
-
-MongoDB Atlas
-
-Cloudinary
-
-🚀 Features
-
-AI-powered campaign generation from a single prompt
-
-Automated social media caption generation
-
-Platform-optimized hashtags
-
-Multi-modal AI generation (Image + Text)
-
-Automatic branding with logo overlays
-
-Customizable call-to-action buttons
-
-Interactive campaign editing studio
-
-Campaign history storage
-
-Remix feature for campaign variations
-
-🔍 Future Improvements
-
-Multi-platform campaign export
-
-Video advertisement generation
-
-AI-based campaign performance prediction
-
-Advanced design templates
-
-Team collaboration dashboard
-
-Automated A/B testing suggestions
-
-👨‍💻 Developed At
-
-Infotact Solutions – AI Innovation Lab
-
-Product Engineering Project
-
-AdVantage Gen – Automated Social Media Campaign Studio
+Infotact Solutions  
+AI Innovation Lab
