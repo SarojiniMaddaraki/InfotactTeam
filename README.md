@@ -3,7 +3,6 @@
 This repository contains projects developed at **Infotact Solutions**.  
 The projects focus on building **AI-powered applications for real-world automation and intelligent systems**.
 
----
 
 ## 📅 January(1st Month) Project – AdVantage Gen
 
